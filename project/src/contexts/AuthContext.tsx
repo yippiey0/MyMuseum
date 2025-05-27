@@ -85,7 +85,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // --- login: ищет пользователя в общем списке ---
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string): Promise<boolean> => {
     const users = getUsersFromStorage();
     // Для простоты пароль не используется
     const foundUser = users.find(u => u.email === email);
@@ -109,7 +109,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // --- register с поддержкой ролей ---
-  const register = async (name: string, email: string, password: string): Promise<boolean> => {
+  const register = async (name: string, email: string): Promise<boolean> => {
     const users = getUsersFromStorage();
     if (users.some(u => u.email === email)) return false;
     // Первый пользователь в системе — админ, остальные — user
