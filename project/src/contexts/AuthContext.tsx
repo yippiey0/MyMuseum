@@ -1,11 +1,16 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 
-interface User {
+// --- ДОБАВЛЕНО: тип роли пользователя ---
+export type UserRole = 'user' | 'admin';
+
+export interface User {
   id: number;
   name: string;
   email: string;
+  role: UserRole;
 }
 
+// --- Новые типы контекста ---
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -16,6 +21,9 @@ interface AuthContextType {
   getFavorites: () => number[];
   addRecentlyViewed: (exhibitId: number) => void;
   getRecentlyViewed: () => number[];
+  // --- Админ-функции ---
+  getUsers: () => User[];
+  setRole: (userId: number, newRole: UserRole) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +39,20 @@ export const useAuth = () => {
 interface AuthProviderProps {
   children: ReactNode;
 }
+
+// --- Helpers для users ---
+const USERS_KEY = 'users';
+
+// Получить всех пользователей
+const getUsersFromStorage = (): User[] => {
+  const users = localStorage.getItem(USERS_KEY);
+  return users ? JSON.parse(users) : [];
+};
+
+// Сохранить всех пользователей
+const saveUsersToStorage = (users: User[]) => {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+};
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -49,25 +71,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.removeItem('user');
       }
     }
+    // --- Инициализация первого админа ---
+    if (!localStorage.getItem(USERS_KEY)) {
+      // Первый пользователь — админ
+      const admin: User = {
+        id: 1,
+        name: 'Администратор',
+        email: 'admin@example.com',
+        role: 'admin',
+      };
+      saveUsersToStorage([admin]);
+    }
   }, []);
 
+  // --- login: ищет пользователя в общем списке ---
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Mock users for demo
-    const mockUsers = [
-      { id: 1, name: 'Иван Петров', email: 'ivan@example.com', password: 'password123' },
-      { id: 2, name: 'Мария Иванова', email: 'maria@example.com', password: 'password123' }
-    ];
-
-    const foundUser = mockUsers.find(u => u.email === email && u.password === password);
-    
+    const users = getUsersFromStorage();
+    // Для простоты пароль не используется
+    const foundUser = users.find(u => u.email === email);
     if (foundUser) {
-      const { password, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
+      setUser(foundUser);
       setIsAuthenticated(true);
-      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
+      localStorage.setItem('user', JSON.stringify(foundUser));
       return true;
     }
-    
     return false;
   };
 
@@ -81,19 +108,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('user');
   };
 
-  const register = async (name: string, email: string): Promise<boolean> => {
-    const newUser = {
+  // --- register с поддержкой ролей ---
+  const register = async (name: string, email: string, password: string): Promise<boolean> => {
+    const users = getUsersFromStorage();
+    if (users.some(u => u.email === email)) return false;
+    // Первый пользователь в системе — админ, остальные — user
+    const role: UserRole = users.length === 0 ? 'admin' : 'user';
+    const newUser: User = {
       id: Math.floor(Math.random() * 10000),
       name,
-      email
+      email,
+      role,
     };
-    
+    const updated = [...users, newUser];
+    saveUsersToStorage(updated);
     setUser(newUser);
     setIsAuthenticated(true);
     localStorage.setItem('user', JSON.stringify(newUser));
     return true;
   };
 
+  // --- Управление ролями ---
+  const setRole = (userId: number, newRole: UserRole) => {
+    const users = getUsersFromStorage();
+    const updated = users.map(u => u.id === userId ? { ...u, role: newRole } : u);
+    saveUsersToStorage(updated);
+    // Если меняется текущий пользователь
+    if (user && user.id === userId) {
+      const updatedUser = { ...user, role: newRole };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+  };
+
+  // --- Получить всех пользователей ---
+  const getUsers = (): User[] => getUsersFromStorage();
+
+  // --- Ваши существующие методы избранного и просмотров ---
   const toggleFavorite = (exhibitId: number) => {
     if (!user) return;
 
@@ -124,7 +175,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const newRecentlyViewed = [
       exhibitId,
       ...recentlyViewed.filter(id => id !== exhibitId)
-    ].slice(0, 5); // Keep only the 5 most recent
+    ].slice(0, 5);
 
     localStorage.setItem(`recentlyViewed_${user.id}`, JSON.stringify(newRecentlyViewed));
   };
@@ -152,7 +203,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         toggleFavorite,
         getFavorites,
         addRecentlyViewed,
-        getRecentlyViewed
+        getRecentlyViewed,
+        // --- Новое ---
+        getUsers,
+        setRole,
       }}
     >
       {children}
