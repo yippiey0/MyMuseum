@@ -1,29 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { User, LogOut, Heart, Clock } from 'lucide-react';
-import exhibits from '../data/exhibits';
 import { Exhibit } from '../types';
-import { Link } from 'react-router-dom';
+
+const API_URL = 'http://localhost:3001/api/exhibits';
 
 const ProfilePage: React.FC = () => {
   const { user, isAuthenticated, logout, getFavorites, getRecentlyViewed } = useAuth();
   const [favoriteExhibits, setFavoriteExhibits] = useState<Exhibit[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<Exhibit[]>([]);
-  
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     if (isAuthenticated) {
-      // Get favorite exhibits
-      const favoriteIds = getFavorites();
-      const favExhibits = exhibits.filter(exhibit => favoriteIds.includes(exhibit.id));
-      setFavoriteExhibits(favExhibits);
-      
-      // Get recently viewed exhibits
-      const recentIds = getRecentlyViewed();
-      const recentExhibits = recentIds
-        .map(id => exhibits.find(exhibit => exhibit.id === id))
-        .filter((exhibit): exhibit is Exhibit => exhibit !== undefined);
-      setRecentlyViewed(recentExhibits);
+      fetch(API_URL)
+        .then(res => res.json())
+        .then((data: Exhibit[]) => {
+          setLoading(false);
+
+          const favoriteIds: number[] = getFavorites();
+          const favExhibits: Exhibit[] = data.filter((exhibit: Exhibit) => favoriteIds.includes(exhibit.id));
+          setFavoriteExhibits(favExhibits);
+
+          const recentIds: number[] = getRecentlyViewed();
+          const recentExhibits: Exhibit[] = recentIds
+            .map((id: number) => data.find((exhibit: Exhibit) => exhibit.id === id))
+            .filter((exhibit): exhibit is Exhibit => exhibit !== undefined);
+          setRecentlyViewed(recentExhibits);
+        });
     }
   }, [isAuthenticated, getFavorites, getRecentlyViewed]);
 
@@ -47,7 +52,7 @@ const ProfilePage: React.FC = () => {
                   <User className="w-8 h-8" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold">{user?.name}</h1>
+                  <h1 className="text-2xl font-bold">{user?.username}</h1>
                   <p className="text-slate-600">{user?.email}</p>
                 </div>
               </div>
@@ -69,7 +74,9 @@ const ProfilePage: React.FC = () => {
               <h2 className="text-xl font-semibold">Избранные экспонаты</h2>
             </div>
             
-            {favoriteExhibits.length > 0 ? (
+            {loading ? (
+              <div className="text-slate-500">Загрузка...</div>
+            ) : favoriteExhibits.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {favoriteExhibits.map(exhibit => (
                   <Link 
@@ -110,7 +117,9 @@ const ProfilePage: React.FC = () => {
               <h2 className="text-xl font-semibold">Недавно просмотренные</h2>
             </div>
             
-            {recentlyViewed.length > 0 ? (
+            {loading ? (
+              <div className="text-slate-500">Загрузка...</div>
+            ) : recentlyViewed.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {recentlyViewed.map(exhibit => (
                   <Link 

@@ -1,215 +1,164 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-
-// --- ДОБАВЛЕНО: тип роли пользователя ---
-export type UserRole = 'user' | 'admin';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface User {
   id: number;
-  name: string;
+  username: string;
   email: string;
-  role: UserRole;
+  role: string;
 }
 
-// --- Новые типы контекста ---
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (usernameOrEmail: string, password: string) => Promise<boolean>;
+  register: (username: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  register: (name: string, email: string, password: string) => Promise<boolean>;
-  toggleFavorite: (exhibitId: number) => void;
   getFavorites: () => number[];
-  addRecentlyViewed: (exhibitId: number) => void;
+  toggleFavorite: (id: number) => void;
   getRecentlyViewed: () => number[];
-  // --- Админ-функции ---
-  getUsers: () => User[];
-  setRole: (userId: number, newRole: UserRole) => void;
+  addRecentlyViewed: (id: number) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  token: null,
+  isAuthenticated: false,
+  login: async () => false,
+  register: async () => false,
+  logout: () => {},
+  getFavorites: () => [],
+  toggleFavorite: () => {},
+  getRecentlyViewed: () => [],
+  addRecentlyViewed: () => {},
+});
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-// --- Helpers для users ---
-const USERS_KEY = 'users';
-
-// Получить всех пользователей
-const getUsersFromStorage = (): User[] => {
-  const users = localStorage.getItem(USERS_KEY);
-  return users ? JSON.parse(users) : [];
-};
-
-// Сохранить всех пользователей
-const saveUsersToStorage = (users: User[]) => {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-};
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check if user is logged in on page load
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Failed to parse stored user data', error);
-        localStorage.removeItem('user');
-      }
-    }
-    // --- Инициализация первого админа ---
-    if (!localStorage.getItem(USERS_KEY)) {
-      // Первый пользователь — админ
-      const admin: User = {
-        id: 1,
-        name: 'Администратор',
-        email: 'admin@example.com',
-        role: 'admin',
-      };
-      saveUsersToStorage([admin]);
+    const storedToken = localStorage.getItem('token');
+    if (storedUser && storedToken) {
+      setUser(JSON.parse(storedUser));
+      setToken(storedToken);
+      setIsAuthenticated(true);
     }
   }, []);
 
-  // --- login: ищет пользователя в общем списке ---
-  const login = async (email: string): Promise<boolean> => {
-    const users = getUsersFromStorage();
-    // Для простоты пароль не используется
-    const foundUser = users.find(u => u.email === email);
-    if (foundUser) {
-      setUser(foundUser);
-      setIsAuthenticated(true);
-      localStorage.setItem('user', JSON.stringify(foundUser));
-      return true;
+  const login = async (usernameOrEmail: string, password: string) => {
+    try {
+      const res = await fetch('http://localhost:3001/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: usernameOrEmail, password }),
+      });
+      const data = await res.json();
+      if (res.ok && data.token) {
+        const userObj: User = {
+          id: data.id,
+          username: data.username,
+          email: data.email,
+          role: data.role,
+        };
+        setUser(userObj);
+        setToken(data.token);
+        setIsAuthenticated(true);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(userObj));
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
     }
-    return false;
+  };
+
+  const register = async (username: string, email: string, password: string) => {
+    try {
+      const res = await fetch('http://localhost:3001/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password }),
+      });
+      const data = await res.json();
+      if (res.ok && data.token) {
+        const userObj: User = {
+          id: data.id,
+          username: data.username,
+          email: data.email,
+          role: data.role,
+        };
+        setUser(userObj);
+        setToken(data.token);
+        setIsAuthenticated(true);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(userObj));
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
   };
 
   const logout = () => {
-    if (user) {
-      localStorage.removeItem(`favorites_${user.id}`);
-      localStorage.removeItem(`recentlyViewed_${user.id}`);
-    }
     setUser(null);
+    setToken(null);
     setIsAuthenticated(false);
+    localStorage.removeItem('token');
     localStorage.removeItem('user');
   };
 
-  // --- register с поддержкой ролей ---
-  const register = async (name: string, email: string): Promise<boolean> => {
-    const users = getUsersFromStorage();
-    if (users.some(u => u.email === email)) return false;
-    // Первый пользователь в системе — админ, остальные — user
-    const role: UserRole = users.length === 0 ? 'admin' : 'user';
-    const newUser: User = {
-      id: Math.floor(Math.random() * 10000),
-      name,
-      email,
-      role,
-    };
-    const updated = [...users, newUser];
-    saveUsersToStorage(updated);
-    setUser(newUser);
-    setIsAuthenticated(true);
-    localStorage.setItem('user', JSON.stringify(newUser));
-    return true;
-  };
-
-  // --- Управление ролями ---
-  const setRole = (userId: number, newRole: UserRole) => {
-    const users = getUsersFromStorage();
-    const updated = users.map(u => u.id === userId ? { ...u, role: newRole } : u);
-    saveUsersToStorage(updated);
-    // Если меняется текущий пользователь
-    if (user && user.id === userId) {
-      const updatedUser = { ...user, role: newRole };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-    }
-  };
-
-  // --- Получить всех пользователей ---
-  const getUsers = (): User[] => getUsersFromStorage();
-
-  // --- Ваши существующие методы избранного и просмотров ---
-  const toggleFavorite = (exhibitId: number) => {
-    if (!user) return;
-
-    const favorites = getFavorites();
-    const newFavorites = favorites.includes(exhibitId)
-      ? favorites.filter(id => id !== exhibitId)
-      : [...favorites, exhibitId];
-
-    localStorage.setItem(`favorites_${user.id}`, JSON.stringify(newFavorites));
-  };
-
+  // Избранное (ID экспонатов)
   const getFavorites = (): number[] => {
-    if (!user) return [];
+    const fav = localStorage.getItem('favorites');
+    return fav ? JSON.parse(fav) as number[] : [];
+  };
 
-    try {
-      const favorites = localStorage.getItem(`favorites_${user.id}`);
-      return favorites ? JSON.parse(favorites) : [];
-    } catch (error) {
-      console.error('Failed to parse favorites', error);
-      return [];
+  const toggleFavorite = (id: number) => {
+    const favorites = getFavorites();
+    let updated: number[];
+    if (favorites.includes(id)) {
+      updated = favorites.filter(favId => favId !== id);
+    } else {
+      updated = [...favorites, id];
     }
+    localStorage.setItem('favorites', JSON.stringify(updated));
   };
 
-  const addRecentlyViewed = (exhibitId: number) => {
-    if (!user) return;
-
-    const recentlyViewed = getRecentlyViewed();
-    const newRecentlyViewed = [
-      exhibitId,
-      ...recentlyViewed.filter(id => id !== exhibitId)
-    ].slice(0, 5);
-
-    localStorage.setItem(`recentlyViewed_${user.id}`, JSON.stringify(newRecentlyViewed));
-  };
-
+  // Недавно просмотренные (ID экспонатов, максимум 20)
   const getRecentlyViewed = (): number[] => {
-    if (!user) return [];
+    const rec = localStorage.getItem('recentlyViewed');
+    return rec ? JSON.parse(rec) as number[] : [];
+  };
 
-    try {
-      const recentlyViewed = localStorage.getItem(`recentlyViewed_${user.id}`);
-      return recentlyViewed ? JSON.parse(recentlyViewed) : [];
-    } catch (error) {
-      console.error('Failed to parse recently viewed', error);
-      return [];
-    }
+  const addRecentlyViewed = (id: number) => {
+    let recents = getRecentlyViewed();
+    recents = recents.filter(item => item !== id);
+    recents.unshift(id);
+    if (recents.length > 20) recents = recents.slice(0, 20);
+    localStorage.setItem('recentlyViewed', JSON.stringify(recents));
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated,
-        login,
-        logout,
-        register,
-        toggleFavorite,
-        getFavorites,
-        addRecentlyViewed,
-        getRecentlyViewed,
-        // --- Новое ---
-        getUsers,
-        setRole,
-      }}
-    >
+    <AuthContext.Provider value={{
+      user,
+      token,
+      isAuthenticated,
+      login,
+      register,
+      logout,
+      getFavorites,
+      toggleFavorite,
+      getRecentlyViewed,
+      addRecentlyViewed,
+    }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
+export const useAuth = () => useContext(AuthContext);

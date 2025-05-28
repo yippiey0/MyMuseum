@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Search, Clock, MapPin, AlertCircle, Info } from 'lucide-react';
-import exhibits from '../data/exhibits';
+import { Exhibit } from '../types';
 
 const heroImages = [
   '/src/images/nnvkpxlv6zstudqmdlka.jpg',
@@ -12,7 +12,20 @@ const heroImages = [
 
 const HomePage: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const featuredExhibits = [...exhibits].sort(() => 0.5 - Math.random()).slice(0, 3);
+  const [featuredExhibits, setFeaturedExhibits] = useState<Exhibit[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Получаем экспонаты из API (Prisma)
+    fetch('http://localhost:3001/api/exhibits')
+      .then(res => res.json())
+      .then((data: Exhibit[]) => {
+        // Выбираем случайные 3 экспоната
+        const shuffled = [...data].sort(() => 0.5 - Math.random());
+        setFeaturedExhibits(shuffled.slice(0, 3));
+        setLoading(false);
+      });
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -184,32 +197,36 @@ const HomePage: React.FC = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featuredExhibits.map(exhibit => (
-              <div key={exhibit.id} className="card group transform hover:-translate-y-1 transition-all duration-300">
-                <div className="overflow-hidden h-64">
-                  <img 
-                    src={exhibit.imageUrl} 
-                    alt={exhibit.name} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
+          {loading ? (
+            <div className="text-center text-xl py-12 text-slate-500">Загрузка...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {featuredExhibits.map(exhibit => (
+                <div key={exhibit.id} className="card group transform hover:-translate-y-1 transition-all duration-300">
+                  <div className="overflow-hidden h-64">
+                    <img 
+                      src={exhibit.imageUrl} 
+                      alt={exhibit.name} 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mb-3">
+                      {exhibit.category}
+                    </span>
+                    <h3 className="text-xl font-semibold mb-2">{exhibit.name}</h3>
+                    <p className="text-slate-600 mb-4 line-clamp-3">{exhibit.description}</p>
+                    <Link 
+                      to={`/exhibits/${exhibit.id}`} 
+                      className="inline-flex items-center font-medium text-blue-700 hover:text-blue-800 group-hover:translate-x-2 transition-transform"
+                    >
+                      Подробнее <ArrowRight className="w-4 h-4 ml-1" />
+                    </Link>
+                  </div>
                 </div>
-                <div className="p-6">
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mb-3">
-                    {exhibit.category}
-                  </span>
-                  <h3 className="text-xl font-semibold mb-2">{exhibit.name}</h3>
-                  <p className="text-slate-600 mb-4 line-clamp-3">{exhibit.description}</p>
-                  <Link 
-                    to={`/exhibits/${exhibit.id}`} 
-                    className="inline-flex items-center font-medium text-blue-700 hover:text-blue-800 group-hover:translate-x-2 transition-transform"
-                  >
-                    Подробнее <ArrowRight className="w-4 h-4 ml-1" />
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           <div className="text-center mt-12">
             <Link 

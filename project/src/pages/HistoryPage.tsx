@@ -1,9 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import historicalEvents from '../data/historicalEvents';
+import { HistoricalEvent } from '../types';
 
 const HistoryPage: React.FC = () => {
-  // Sort events by date
+  const [historicalEvents, setHistoricalEvents] = useState<HistoricalEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Получаем исторические события из API (Prisma)
+  useEffect(() => {
+    fetch('http://localhost:3001/api/historical-events')
+      .then(res => res.json())
+      .then(data => {
+        setHistoricalEvents(data);
+        setLoading(false);
+      });
+  }, []);
+
+  // Сортируем события по дате (предполагается, что date — год)
   const sortedEvents = [...historicalEvents].sort((a, b) => {
     return parseInt(a.date, 10) - parseInt(b.date, 10);
   });
@@ -50,28 +63,32 @@ const HistoryPage: React.FC = () => {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-semibold mb-12 text-center">Ключевые события</h2>
           <div className="max-w-4xl mx-auto timeline-container">
-            {sortedEvents.map((event) => (
-              <div key={event.id} className="timeline-item">
-                <div className="mb-1 flex items-center">
-                  <span className="text-xl font-bold text-blue-700">{event.date}</span>
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{event.title}</h3>
-                <div className="flex flex-col md:flex-row gap-4">
-                  {event.imageUrl && (
-                    <div className="md:w-1/3">
-                      <img 
-                        src={event.imageUrl} 
-                        alt={event.title} 
-                        className="rounded-lg w-full h-auto"
-                      />
+            {loading ? (
+              <div className="text-center text-xl text-slate-500 py-8">Загрузка...</div>
+            ) : (
+              sortedEvents.map((event) => (
+                <div key={event.id} className="timeline-item">
+                  <div className="mb-1 flex items-center">
+                    <span className="text-xl font-bold text-blue-700">{event.date}</span>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">{event.title}</h3>
+                  <div className="flex flex-col md:flex-row gap-4">
+                    {event.imageUrl && (
+                      <div className="md:w-1/3">
+                        <img 
+                          src={event.imageUrl} 
+                          alt={event.title} 
+                          className="rounded-lg w-full h-auto"
+                        />
+                      </div>
+                    )}
+                    <div className={event.imageUrl ? 'md:w-2/3' : 'w-full'}>
+                      <p className="text-slate-700">{event.description}</p>
                     </div>
-                  )}
-                  <div className={event.imageUrl ? 'md:w-2/3' : 'w-full'}>
-                    <p className="text-slate-700">{event.description}</p>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>

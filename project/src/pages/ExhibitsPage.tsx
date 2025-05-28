@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, X } from 'lucide-react';
-import exhibits from '../data/exhibits';
 import { Exhibit, FilterOptions } from '../types';
 
 const ExhibitsPage: React.FC = () => {
-  const [filteredExhibits, setFilteredExhibits] = useState<Exhibit[]>(exhibits);
+  const [exhibits, setExhibits] = useState<Exhibit[]>([]);
+  const [filteredExhibits, setFilteredExhibits] = useState<Exhibit[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  
+
   const [filters, setFilters] = useState<FilterOptions>({
     category: '',
     yearFrom: 1950,
@@ -15,37 +15,60 @@ const ExhibitsPage: React.FC = () => {
     searchQuery: ''
   });
 
-  // Get all unique categories
-  const categories = ['Все категории', ...new Set(exhibits.map(exhibit => exhibit.category))];
-  
-  // Get min and max years from exhibits
-  const minYear = Math.min(...exhibits.map(exhibit => exhibit.year));
-  const maxYear = Math.max(...exhibits.map(exhibit => exhibit.year));
+  // Получаем экспонаты из API (Prisma)
+  useEffect(() => {
+    fetch('http://localhost:3001/api/exhibits')
+      .then(res => res.json())
+      .then(data => {
+        setExhibits(data);
+        setFilteredExhibits(data);
+        // Обновим диапазон лет по данным из БД
+        if (data.length > 0) {
+          const years = data.map((ex: Exhibit) => ex.year).filter(Boolean);
+          const minYear = Math.min(...years);
+          const maxYear = Math.max(...years);
+          setFilters(prev => ({
+            ...prev,
+            yearFrom: minYear,
+            yearTo: maxYear
+          }));
+        }
+      });
+    // eslint-disable-next-line
+  }, []);
 
+  // Пересчитать фильтры при изменении фильтров или exhibits
   useEffect(() => {
     let result = [...exhibits];
-    
-    // Filter by search query
+
+    // Фильтр по поисковому запросу
     if (filters.searchQuery) {
       const query = filters.searchQuery.toLowerCase();
-      result = result.filter(exhibit => 
-        exhibit.name.toLowerCase().includes(query) || 
-        exhibit.description.toLowerCase().includes(query)
+      result = result.filter(exhibit =>
+        exhibit.name.toLowerCase().includes(query) ||
+        (exhibit.description?.toLowerCase().includes(query) ?? false)
       );
     }
-    
-    // Filter by category
+
+    // Фильтр по категории
     if (filters.category && filters.category !== 'Все категории') {
       result = result.filter(exhibit => exhibit.category === filters.category);
     }
-    
-    // Filter by year range
-    result = result.filter(exhibit => 
+
+    // Фильтр по диапазону лет
+    result = result.filter(exhibit =>
       exhibit.year >= filters.yearFrom && exhibit.year <= filters.yearTo
     );
-    
+
     setFilteredExhibits(result);
-  }, [filters]);
+  }, [filters, exhibits]);
+
+  // Категории из БД
+  const categories = ['Все категории', ...Array.from(new Set(exhibits.map(exhibit => exhibit.category).filter(Boolean)))];
+
+  // Диапазон лет из БД
+  const minYear = exhibits.length > 0 ? Math.min(...exhibits.map(e => e.year).filter(Boolean)) : 1950;
+  const maxYear = exhibits.length > 0 ? Math.max(...exhibits.map(e => e.year).filter(Boolean)) : 2025;
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilters(prev => ({ ...prev, searchQuery: e.target.value }));

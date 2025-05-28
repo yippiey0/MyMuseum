@@ -1,22 +1,38 @@
-import React, { useState } from 'react';
-import galleryImages, { GalleryImage } from '../data/gallery';
+import React, { useState, useEffect } from 'react';
+import { GalleryImage } from '../types';
+
+const categories = [
+  { id: 'all', name: 'Все фотографии' },
+  { id: 'factory', name: 'Филиал ПАО "Ил"-Авиастар' },
+  { id: 'museum', name: 'Музей' },
+  { id: 'archive', name: 'Архив' },
+  { id: 'history', name: 'История' }
+];
 
 const GalleryPage: React.FC = () => {
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'factory' | 'museum' | 'archive' | 'history'>('all');
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [zoomed, setZoomed] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const categories = [
-    { id: 'all', name: 'Все фотографии' },
-    { id: 'factory', name: 'Филиал ПАО "Ил"-Авиастар' },
-    { id: 'museum', name: 'Музей' },
-    { id: 'archive', name: 'Архив' },
-    { id: 'history', name: 'История' }
-  ];
+  // Получаем галерею из API (Prisma)
+  useEffect(() => {
+    fetch('http://localhost:3001/api/gallery')
+      .then(res => res.json())
+      .then(data => {
+        setGalleryImages(data);
+        setLoading(false);
+      });
+  }, []);
 
-  const filteredImages = selectedCategory === 'all' 
-    ? galleryImages 
+  const filteredImages = selectedCategory === 'all'
+    ? galleryImages
     : galleryImages.filter(img => img.category === selectedCategory);
+
+  if (loading) {
+    return <div className="text-center py-12 text-xl">Загрузка...</div>;
+  }
 
   return (
     <div className="fade-in">
@@ -55,24 +71,32 @@ const GalleryPage: React.FC = () => {
       {/* Gallery Grid */}
       <section className="py-12 bg-slate-50">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredImages.map((image: GalleryImage) => (
-              <div 
-                key={image.id} 
-                className="card group cursor-pointer"
-                onClick={() => {setSelectedImage(image);
-                  setZoomed(false);
-                }}
-              >
-                <div className="overflow-hidden h-64">
-                  <img 
-                    src={image.imageUrl} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
+          {filteredImages.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredImages.map((image: GalleryImage) => (
+                <div 
+                  key={image.id} 
+                  className="card group cursor-pointer"
+                  onClick={() => {
+                    setSelectedImage(image);
+                    setZoomed(false);
+                  }}
+                >
+                  <div className="overflow-hidden h-64">
+                    <img 
+                      src={image.imageUrl} 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      alt={image.category}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-xl text-slate-500">
+              Нет фотографий для выбранной категории.
+            </div>
+          )}
         </div>
       </section>
 
@@ -106,11 +130,12 @@ const GalleryPage: React.FC = () => {
                   maxWidth: zoomed ? '1200px' : '100%',
                   maxHeight: zoomed ? 'none' : '90vh'
                 }}
+                alt={selectedImage.category}
                 onClick={() => setZoomed(z => !z)}
-            />
+              />
+            </div>
           </div>
         </div>
-      </div>
       )}
     </div>
   );

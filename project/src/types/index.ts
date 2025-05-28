@@ -32,3 +32,19 @@ export interface FilterOptions {
   yearTo: number;
   searchQuery: string;
 }
+
+export interface GalleryImage {
+  id: number;
+  category: 'factory' | 'museum' | 'archive' | 'history';
+  imageUrl: string;
+}
+
+export interface Person {
+  id: number;
+  name: string;
+  role: string;
+  years: string;
+  biography: string;
+  achievements: string;
+  imageUrl: string;
+}

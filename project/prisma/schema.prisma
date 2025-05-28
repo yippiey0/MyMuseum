@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./museum.db"
+}
+model Exhibit {
+  id                Int     @id @default(autoincrement())
+  name              String
+  description       String?
+  imageUrl          String?
+  year              Int?
+  category          String?
+  technicalDetails  String?
+  historicalContext String?
+}
+
+model HistoricalEvent {
+  id          Int    @id @default(autoincrement())
+  title       String
+  date        String?
+  description String?
+  imageUrl    String?
+}
+
+model GalleryImage {
+  id       Int    @id @default(autoincrement())
+  category String
+  imageUrl String
+}
+
+model Person {
+  id           Int    @id @default(autoincrement())
+  name         String
+  role         String?
+  years        String?
+  biography    String?
+  achievements String?
+  imageUrl     String?
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  username String @unique
+  email    String @unique
+  password String 
+  role     String 
+}

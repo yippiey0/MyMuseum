@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, Heart } from 'lucide-react';
-import exhibits from '../data/exhibits';
 import { Exhibit } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -9,7 +8,7 @@ const ExhibitDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, toggleFavorite, getFavorites, addRecentlyViewed } = useAuth();
-  
+
   const [exhibit, setExhibit] = useState<Exhibit | null>(null);
   const [relatedExhibits, setRelatedExhibits] = useState<Exhibit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -18,30 +17,40 @@ const ExhibitDetailPage: React.FC = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
     setIsLoading(true);
-    
+
     const exhibitId = parseInt(id || '0', 10);
-    const foundExhibit = exhibits.find(e => e.id === exhibitId);
-    
-    if (foundExhibit) {
-      setExhibit(foundExhibit);
-      
-      const related = exhibits
-        .filter(e => e.id !== exhibitId && e.category === foundExhibit.category)
-        .slice(0, 3);
-      
-      setRelatedExhibits(related);
 
-      // Check if exhibit is in favorites
-      const favorites = getFavorites();
-      setIsFavorite(favorites.includes(exhibitId));
+    // Получаем экспонат из API
+    fetch(`http://localhost:3001/api/exhibits/${exhibitId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then((ex: Exhibit | null) => {
+        if (ex) {
+          setExhibit(ex);
 
-      // Add to recently viewed
-      if (isAuthenticated) {
-        addRecentlyViewed(exhibitId);
-      }
-    }
-    
-    setIsLoading(false);
+          // Получаем похожие экспонаты (по категории, но другой id)
+          fetch(`http://localhost:3001/api/exhibits`)
+            .then(res => res.json())
+            .then((all: Exhibit[]) => {
+              const related = all
+                .filter(e => e.id !== exhibitId && e.category === ex.category)
+                .slice(0, 3);
+              setRelatedExhibits(related);
+            });
+
+          // Check if exhibit is in favorites
+          const favorites = getFavorites();
+          setIsFavorite(favorites.includes(exhibitId));
+
+          // Add to recently viewed
+          if (isAuthenticated) {
+            addRecentlyViewed(exhibitId);
+          }
+        } else {
+          setExhibit(null);
+        }
+        setIsLoading(false);
+      });
+      // eslint-disable-next-line
   }, [id, getFavorites, isAuthenticated, addRecentlyViewed]);
 
   const handleFavoriteClick = () => {
