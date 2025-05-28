@@ -67,6 +67,12 @@ const Header: React.FC = () => {
             >
               Люди
             </Link>
+            <Link 
+                to="/feedback" 
+                className={`py-2 transition-colors ${location.pathname === '/feedback' ? 'text-blue-700 font-medium' : 'text-slate-700'}`}
+              >
+                Заявка на экскурсию
+              </Link>
             {isAuthenticated ? (
               <Link 
                 to="/profile" 
@@ -124,6 +130,12 @@ const Header: React.FC = () => {
                 className={`py-2 transition-colors ${location.pathname === '/people' ? 'text-blue-700 font-medium' : 'text-slate-700'}`}
               >
                 Люди
+              </Link>
+              <Link 
+                to="/feedback" 
+                className={`py-2 transition-colors ${location.pathname === '/feedback' ? 'text-blue-700 font-medium' : 'text-slate-700'}`}
+              >
+                Заявка на экскурсию
               </Link>
               {isAuthenticated ? (
                 <Link 

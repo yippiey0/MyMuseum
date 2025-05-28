@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GalleryImage } from '../types';
+import { GallerySwiper } from "../components/GallerySwiper";
 
 const categories = [
   { id: 'all', name: 'Все фотографии' },
@@ -12,8 +13,7 @@ const categories = [
 const GalleryPage: React.FC = () => {
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'factory' | 'museum' | 'archive' | 'history'>('all');
-  const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
-  const [zoomed, setZoomed] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Получаем галерею из API (Prisma)
@@ -29,6 +29,9 @@ const GalleryPage: React.FC = () => {
   const filteredImages = selectedCategory === 'all'
     ? galleryImages
     : galleryImages.filter(img => img.category === selectedCategory);
+
+  const openModal = (idx: number) => setSelectedIndex(idx);
+  const closeModal = () => setSelectedIndex(null);
 
   if (loading) {
     return <div className="text-center py-12 text-xl">Загрузка...</div>;
@@ -73,14 +76,11 @@ const GalleryPage: React.FC = () => {
         <div className="container mx-auto px-4">
           {filteredImages.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredImages.map((image: GalleryImage) => (
+              {filteredImages.map((image: GalleryImage, idx) => (
                 <div 
                   key={image.id} 
                   className="card group cursor-pointer"
-                  onClick={() => {
-                    setSelectedImage(image);
-                    setZoomed(false);
-                  }}
+                  onClick={() => openModal(idx)}
                 >
                   <div className="overflow-hidden h-64">
                     <img 
@@ -100,11 +100,11 @@ const GalleryPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Image Preview Modal */}
-      {selectedImage && (
+      {/* Swiper Modal */}
+      {selectedIndex !== null && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
-          onClick={() => setSelectedImage(null)}
+          onClick={closeModal}
         >
           <div 
             className="relative max-w-7xl w-full mx-auto"
@@ -112,28 +112,15 @@ const GalleryPage: React.FC = () => {
           >
             <button
               className="absolute top-4 right-4 text-white hover:text-gray-300 text-4xl"
-              onClick={() => setSelectedImage(null)}
+              onClick={closeModal}
             >
               ×
             </button>
-            <button
-              className="absolute top-4 left-4 bg-white bg-opacity-30 hover:bg-opacity-50 text-black font-bold py-2 px-4 rounded transition"
-              onClick={() => setZoomed(z => !z)}
-            >
-              {zoomed ? 'Уменьшить' : 'Приблизить'}
-            </button>
-            <div className="flex justify-center items-center">
-              <img
-                src={selectedImage.imageUrl}
-                className={`transition-transform duration-300 w-full h-auto max-h-[90vh] object-contain ${zoomed ? 'scale-125 cursor-zoom-out' : 'scale-100 cursor-zoom-in'}`}
-                style={{
-                  maxWidth: zoomed ? '1200px' : '100%',
-                  maxHeight: zoomed ? 'none' : '90vh'
-                }}
-                alt={selectedImage.category}
-                onClick={() => setZoomed(z => !z)}
-              />
-            </div>
+            <GallerySwiper
+              images={filteredImages.map(img => img.imageUrl)}
+              captions={filteredImages.map(img => img.caption ?? "")}
+              initialIndex={selectedIndex}
+            />
           </div>
         </div>
       )}

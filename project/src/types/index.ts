@@ -34,6 +34,7 @@ export interface FilterOptions {
 }
 
 export interface GalleryImage {
+  caption: any;
   id: number;
   category: 'factory' | 'museum' | 'archive' | 'history';
   imageUrl: string;

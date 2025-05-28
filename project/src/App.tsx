@@ -13,6 +13,10 @@ import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
 import AdminPage from './pages/AdminPage';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import FeedbackPage from "./pages/FeedbackPage";
 
 function App() {
   return (
@@ -33,6 +37,7 @@ function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="*" element={<NotFoundPage />} />
+              <Route path="/feedback" element={<FeedbackPage />} />
             </Routes>
           </main>
           <Footer />

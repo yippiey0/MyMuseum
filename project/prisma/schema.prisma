@@ -54,3 +54,14 @@ model User {
   password String 
   role     String 
 }
+
+model ExcursionRequest {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String
+  phone        String?
+  message      String?
+  excursionDate DateTime?
+  groupSize    Int?
+  createdAt    DateTime @default(now())
+}

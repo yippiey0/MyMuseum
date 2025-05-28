@@ -10,6 +10,7 @@ async function main() {
     update: {},
     create: {
       username: 'admin',
+      email:'',
       password,
       role: 'admin'
     }
