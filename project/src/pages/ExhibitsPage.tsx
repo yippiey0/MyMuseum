@@ -252,8 +252,13 @@ const ExhibitsPage: React.FC = () => {
             <>
               <p className="mb-6 text-slate-600">Найдено самолётов и экспонатов: {filteredExhibits.length}</p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredExhibits.map(exhibit => (
-                  <Link key={exhibit.id} to={`/exhibits/${exhibit.id}`} className="card group">
+                {filteredExhibits.map((exhibit, idx) => (
+                  <Link
+                    key={exhibit.id}
+                    to={`/exhibits/${exhibit.id}`}
+                    className="card group exhibit-fade-in"
+                    style={{ animationDelay: `${idx * 40}ms` }}
+                  >
                     <div className="overflow-hidden h-64">
                       <img 
                         src={exhibit.imageUrl} 
