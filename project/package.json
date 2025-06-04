@@ -13,18 +13,24 @@
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",
+    "@react-three/drei": "^9.56.15",
+    "@react-three/fiber": "^8.13.7",
     "bcryptjs": "^3.0.2",
     "better-sqlite3": "^11.10.0",
+    "framer-motion": "^12.16.0",
     "jQuery": "^1.7.4",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.344.0",
     "nodemailer": "^7.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-qr-code": "^2.0.15",
     "react-router-dom": "^6.22.3",
+    "recharts": "^2.15.3",
     "sqlite3": "^5.1.7",
     "swiper": "^11.2.8",
-    "tailwind": "^4.0.0"
+    "tailwind": "^4.0.0",
+    "three": "^0.177.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",

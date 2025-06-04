@@ -29,9 +29,9 @@ router.get('/:id', async (req, res) => {
 // POST — только админ
 router.post('/', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const { name, description, imageUrl, year, category } = req.body;
+    const { name, description, imageUrl, year, category, videoUrl, technicalDetails, historicalContext, model3dUrl } = req.body;
     const exhibit = await prisma.exhibit.create({
-      data: { name, description, imageUrl, year, category }
+      data: { name, description, imageUrl, year, category, videoUrl, technicalDetails, historicalContext, model3dUrl }
     });
     res.status(201).json(exhibit);
   } catch (err) {
@@ -43,10 +43,10 @@ router.post('/', authMiddleware, adminOnly, async (req, res) => {
 router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
   const id = Number(req.params.id);
   try {
-    const { name, description, imageUrl, year, category } = req.body;
+    const { name, description, imageUrl, year, category, videoUrl, technicalDetails, historicalContext, model3dUrl } = req.body;
     const exhibit = await prisma.exhibit.update({
       where: { id },
-      data: { name, description, imageUrl, year, category }
+      data: { name, description, imageUrl, year, category, videoUrl, technicalDetails, historicalContext, model3dUrl }
     });
     res.json(exhibit);
   } catch (err) {

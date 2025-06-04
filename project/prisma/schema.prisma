@@ -21,6 +21,8 @@ model Exhibit {
   category          String?
   technicalDetails  String?
   historicalContext String?
+  videoUrl          String?
+  model3dUrl        String? 
 }
 
 model HistoricalEvent {

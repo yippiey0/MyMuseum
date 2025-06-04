@@ -1,0 +1,26 @@
+.timeline-container {
+  position: relative;
+  padding-left: 40px;
+}
+.timeline-container ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.timeline-container .timeline-marker {
+  position: absolute;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  background: #2563eb;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px #2563eb;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(24px);}
+  to { opacity: 1; transform: none;}
+}
+.animate-fadeIn {
+  animation: fadeIn .18s;
+}

@@ -16,6 +16,8 @@ export interface Exhibit {
   category: string;
   technicalDetails?: string;
   historicalContext?: string;
+  videoUrl?: string;
+  model3dUrl?: string;
 }
 
 export interface HistoricalEvent {
