@@ -31,6 +31,7 @@ model HistoricalEvent {
   date        String?
   description String?
   imageUrl    String?
+  videoUrl    String?
 }
 
 model GalleryImage {

@@ -24,3 +24,6 @@
 .animate-fadeIn {
   animation: fadeIn .18s;
 }
+li {
+  transition: opacity 0.7s, transform 0.7s;
+}

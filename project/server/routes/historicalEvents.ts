@@ -16,9 +16,9 @@ router.get('/', async (req, res) => {
 
 router.post('/', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const { title, date, description, imageUrl } = req.body;
+    const { title, date, description, imageUrl, videoUrl } = req.body;
     const newEvent = await prisma.historicalEvent.create({
-      data: { title, date, description, imageUrl }
+      data: { title, date, description, imageUrl, videoUrl }
     });
     res.status(201).json(newEvent);
   } catch (err) {
@@ -29,10 +29,10 @@ router.post('/', authMiddleware, adminOnly, async (req, res) => {
 router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
   const id = Number(req.params.id);
   try {
-    const { title, date, description, imageUrl } = req.body;
+    const { title, date, description, imageUrl, videoUrl } = req.body;
     const updatedEvent = await prisma.historicalEvent.update({
       where: { id },
-      data: { title, date, description, imageUrl }
+      data: { title, date, description, imageUrl, videoUrl }
     });
     res.json(updatedEvent);
   } catch (err) {

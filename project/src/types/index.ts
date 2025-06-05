@@ -26,6 +26,7 @@ export interface HistoricalEvent {
   date: string;
   description: string;
   imageUrl?: string;
+  videoUrl?: string;
 }
 
 export interface FilterOptions {

@@ -117,7 +117,20 @@ const HistoryPage: React.FC = () => {
                                 className="rounded-lg w-full object-cover max-h-60 mb-2"
                               />
                             )}
-                            {/* Можно добавить больше подробностей, например, ссылки, источники, цитаты */}
+                            {/* Видео с rutube, если есть */}
+                            {event.videoUrl && event.videoUrl.includes('rutube.ru') && (
+                              <div className="mt-4 w-full">
+                                <iframe
+                                  src={event.videoUrl}
+                                  width="560"
+                                  height="315"
+                                  allow="autoplay; encrypted-media"
+                                  allowFullScreen
+                                  title="Видео события"
+                                  style={{ border: 'none', maxWidth: '100%', borderRadius: '12px' }}
+                                />
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
